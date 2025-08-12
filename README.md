@@ -29,3 +29,6 @@ The application can be configured via `config.py` file. Available configurations
 
 ## License
 This project is licensed under the MIT License - see the LICENSE file for details.
+
+## About This Project
+This project was developed with the assistance of AI. We strive to provide the best possible user experience, but if you encounter any issues or have suggestions for improvements, please feel free to reach out and communicate with us. We appreciate your understanding and support, and kindly request that you avoid blaming the author for any problems you may encounter.
