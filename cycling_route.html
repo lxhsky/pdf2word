@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>厦门北站到软件园二期骑行路线</title>
+    <style>
+        body { margin: 0; padding: 0; font-family: 'Microsoft YaHei', sans-serif; }
+        #mapContainer { width: 100%; height: 600px; }
+        .route-info { padding: 15px; background-color: #f5f5f5; border-bottom: 1px solid #ddd; }
+        .route-info h2 { margin-top: 0; color: #333; }
+        .error-message { color: red; padding: 10px; background-color: #ffebee; border: 1px solid #ffcdd2; margin: 10px; }
+        .debug-info { font-size: 12px; color: #666; margin-top: 5px; }
+        .route-steps { max-height: 400px; overflow-y: auto; padding: 10px; }
+        .step { padding: 10px; border-bottom: 1px solid #eee; }
+        .step:last-child { border-bottom: none; }
+        .step-distance { color: #666; font-size: 14px; }
+        .container { display: flex; flex-direction: column; height: 100vh; }
+        .bottom-section { display: flex; flex: 1; overflow: hidden; }
+        .map-side { flex: 2; overflow: hidden; }
+        .steps-side { flex: 1; overflow: hidden; border-left: 1px solid #ddd; }
+        .refresh-button { margin-top: 10px; padding: 8px 15px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        .refresh-button:hover { background-color: #45a049; }
+    </style>
+    <!-- 引入高德地图API，并添加骑行路线规划插件 -->
+    <script type="text/javascript" src="https://webapi.amap.com/maps?v=1.4.15&key=52deb59ee0a8aceb709974021b9bcbf8&plugin=AMap.Riding"></script>
+    <script type="text/javascript" src="https://webapi.amap.com/ui/1.0/main.js?v=1.0.11"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="route-info">
+            <h2>厦门北站到软件园二期骑行路线</h2>
+            <p>总距离: <span id="totalDistance">27.3公里</span> | 预计时间: <span id="totalDuration">约1小时49分钟</span></p>
+            <div id="errorContainer" style="display: none;"></div>
+            <button class="refresh-button" onclick="initMap()">刷新地图</button>
+        </div>
+        <div class="bottom-section">
+            <div class="map-side">
+                <div id="mapContainer"></div>
+            </div>
+            <div class="steps-side">
+                <div class="route-steps" id="routeSteps">
+                    <!-- 路线步骤将在这里动态生成 -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 初始化地图
+        function initMap() {
+            // 清除之前的错误信息
+            document.getElementById('errorContainer').style.display = 'none';
+
+            // 创建地图实例
+            const map = new AMap.Map('mapContainer', {
+                resizeEnable: true,
+                center: [118.129351, 24.55876], // 厦门中心位置
+                zoom: 12
+            });
+
+            // 路线数据
+            const routeData = {
+                origin: [118.073539, 24.637112], // 厦门北站
+                destination: [118.185164, 24.480522], // 软件园二期
+                // 基于实际地理特征的中间点，避免穿过海域
+                waypoints: [
+                    [118.085, 24.62],  // 集美区
+                    [118.10, 24.60],   // 杏林大桥附近
+                    [118.11, 24.59],   // 厦门大桥附近
+                    [118.12, 24.58],   // 湖里区
+                    [118.14, 24.56],   // 江头
+                    [118.16, 24.54],   // 吕厝
+                    [118.18, 24.52]    // 前埔
+                ],
+                steps: [
+                    { instruction: "向东南骑行347米右转", distance: 347, orientation: "东南", duration: 83 },
+                    { instruction: "向西南骑行28米右转", distance: 28, orientation: "西南", duration: 7 },
+                    { instruction: "向西南骑行185米左转", distance: 185, orientation: "西南", duration: 44 },
+                    { instruction: "沿岩通路向东南骑行310米向右前方行驶", distance: 310, orientation: "东南", duration: 74, road: "岩通路" },
+                    { instruction: "沿集美北大道骑行48米右转", distance: 48, duration: 12, road: "集美北大道" },
+                    { instruction: "沿集美北大道向西南骑行103米向右前方行驶", distance: 103, orientation: "西南", duration: 25, road: "集美北大道" },
+                    { instruction: "向西南骑行72米直行", distance: 72, orientation: "西南", duration: 17 },
+                    { instruction: "向西南骑行149米直行", distance: 149, orientation: "西南", duration: 36 },
+                    { instruction: "向南骑行36米右转", distance: 36, orientation: "南", duration: 9 },
+                    { instruction: "沿集美北大道向西南骑行58米向右前方行驶", distance: 58, orientation: "西南", duration: 14, road: "集美北大道" },
+                    { instruction: "向西骑行40米左转", distance: 40, orientation: "西", duration: 10 },
+                    { instruction: "向南骑行35米靠右", distance: 35, orientation: "南", duration: 8 },
+                    { instruction: "沿天水路向南骑行1275米右转", distance: 1275, orientation: "南", duration: 306, road: "天水路" },
+                    { instruction: "沿孙坂南路骑行21米左转", distance: 21, duration: 5, road: "孙坂南路" },
+                    { instruction: "向东骑行41米向右前方行驶", distance: 41, orientation: "东", duration: 10 },
+                    { instruction: "向东南骑行1463米向右前方行驶", distance: 1463, orientation: "东南", duration: 351 },
+                    { instruction: "沿孙坂南路向东南骑行2685米左转", distance: 2685, orientation: "东南", duration: 644, road: "孙坂南路" },
+                    { instruction: "沿渡田路骑行458米右转", distance: 458, duration: 110, road: "渡田路" },
+                    { instruction: "向东南骑行285米左转", distance: 285, orientation: "东南", duration: 68 },
+                    { instruction: "向东南骑行126米右转", distance: 126, orientation: "东南", duration: 30 },
+                    { instruction: "沿同集南路辅路向西南骑行412米左转", distance: 412, orientation: "西南", duration: 99, road: "同集南路辅路" },
+                    { instruction: "沿银江路辅路向西南骑行2953米向左前方行驶", distance: 2953, orientation: "西南", duration: 709, road: "银江路辅路" },
+                    { instruction: "向东南骑行123米向右前方行驶", distance: 123, orientation: "东南", duration: 30 },
+                    { instruction: "沿海堤路向东南骑行189米向左前方行驶", distance: 189, orientation: "东南", duration: 45, road: "海堤路" },
+                    { instruction: "向东南骑行3485米向左前方行驶", distance: 3485, orientation: "东南", duration: 836 },
+                    { instruction: "向东南骑行81米向右前方行驶", distance: 81, orientation: "东南", duration: 19 },
+                    { instruction: "沿嘉禾路向南骑行2200米左转", distance: 2200, orientation: "南", duration: 528, road: "嘉禾路" },
+                    { instruction: "向南骑行29米左转", distance: 29, orientation: "南", duration: 7 },
+                    { instruction: "向东南骑行368米右转", distance: 368, orientation: "东南", duration: 88 },
+                    { instruction: "向南骑行26米左转", distance: 26, orientation: "南", duration: 6 },
+                    { instruction: "沿嘉禾路辅路向东南骑行671米向右前方行驶", distance: 671, orientation: "东南", duration: 161, road: "嘉禾路辅路" },
+                    { instruction: "沿嘉禾路向南骑行818米向右前方行驶", distance: 818, orientation: "南", duration: 196, road: "嘉禾路" },
+                    { instruction: "沿嘉禾路辅路向东南骑行1238米左转", distance: 1238, orientation: "东南", duration: 297, road: "嘉禾路辅路" },
+                    { instruction: "沿仙岳路辅路骑行1499米右转", distance: 1499, duration: 360, road: "仙岳路辅路" },
+                    { instruction: "沿双浦路向南骑行426米向右前方行驶", distance: 426, orientation: "南", duration: 102, road: "双浦路" },
+                    { instruction: "沿双浦路向南骑行351米左转", distance: 351, orientation: "南", duration: 84, road: "双浦路" },
+                    { instruction: "沿吕岭路骑行289米向右前方行驶", distance: 289, duration: 69, road: "吕岭路" },
+                    { instruction: "沿吕岭路向东骑行2922米向右前方行驶", distance: 2922, orientation: "东", duration: 701, road: "吕岭路" },
+                    { instruction: "向东骑行187米向右前方行驶", distance: 187, orientation: "东", duration: 45 },
+                    { instruction: "沿吕岭路向东骑行1285米到达目的地", distance: 1285, orientation: "东", duration: 308, road: "吕岭路" }
+                ]
+            };
+
+            // 添加起点和终点标记
+            const startMarker = new AMap.Marker({
+                position: routeData.origin,
+                map: map,
+                icon: new AMap.Icon({
+                    image: 'https://webapi.amap.com/theme/v1.3/markers/n/start.png',
+                    size: new AMap.Size(40, 40),
+                    imageSize: new AMap.Size(40, 40)
+                }),
+                title: '厦门北站'
+            });
+
+            const endMarker = new AMap.Marker({
+                position: routeData.destination,
+                map: map,
+                icon: new AMap.Icon({
+                    image: 'https://webapi.amap.com/theme/v1.3/markers/n/end.png',
+                    size: new AMap.Size(40, 40),
+                    imageSize: new AMap.Size(40, 40)
+                }),
+                title: '软件园二期'
+            });
+
+            // 添加中间点标记
+            routeData.waypoints.forEach((point, index) => {
+                const marker = new AMap.Marker({
+                    position: point,
+                    map: map,
+                    icon: new AMap.Icon({
+                        image: 'https://webapi.amap.com/theme/v1.3/markers/n/midpoint.png',
+                        size: new AMap.Size(20, 20),
+                        imageSize: new AMap.Size(20, 20)
+                    }),
+                    title: `途经点 ${index + 1}`
+                });
+            });
+
+            // 弹框信息
+            startMarker.content = '<div style="padding:10px;"><b>起点：厦门北站</b></div>';
+            endMarker.content = '<div style="padding:10px;"><b>终点：软件园二期</b></div>';
+
+            const infoWindow = new AMap.InfoWindow({offset: new AMap.Pixel(0, -30)});
+            startMarker.on('click', function() {
+                infoWindow.setContent(this.content);
+                infoWindow.open(map, this.getPosition());
+            });
+            endMarker.on('click', function() {
+                infoWindow.setContent(this.content);
+                infoWindow.open(map, this.getPosition());
+            });
+
+            // 检查是否加载了Riding插件
+            if (typeof AMap.Riding === 'undefined') {
+                showError('未加载骑行路线规划插件，请刷新页面重试');
+                drawBackupRoute(map, routeData);
+                return;
+            }
+
+            // 使用高德地图骑行路线规划服务
+            const riding = new AMap.Riding({
+                map: map,
+                panel: 'routeSteps'
+            });
+
+            // 添加调试信息
+            console.log('开始路线规划请求');
+            console.log('起点:', routeData.origin);
+            console.log('终点:', routeData.destination);
+
+            // 设置路线规划的起点和终点
+            riding.search(
+                new AMap.LngLat(routeData.origin[0], routeData.origin[1]),
+                new AMap.LngLat(routeData.destination[0], routeData.destination[1]),
+                function(status, result) {
+                    console.log('路线规划完成，状态:', status);
+                    console.log('路线规划结果:', result);
+
+                    if (status === 'complete') {
+                        console.log('骑行路线规划成功', result);
+                        // 更新总距离和时间
+                        const path = result.routes[0];
+                        document.getElementById('totalDistance').innerText = (path.distance / 1000).toFixed(1) + '公里';
+                        document.getElementById('totalDuration').innerText = '约' + Math.ceil(path.duration / 60) + '分钟';
+                    } else {
+                        console.error('骑行路线规划失败', result);
+                        const errorMsg = result && result.info ? result.info : '未知错误';
+                        showError('骑行路线规划失败: ' + errorMsg + '<div class="debug-info">API状态码: ' + status + '</div>');
+                        // 手动绘制路线作为备选方案
+                        drawBackupRoute(map, routeData);
+                    }
+                }
+            );
+
+            // 调整地图视野
+            map.setFitView([startMarker, endMarker]);
+
+            // 生成路线步骤列表
+            const stepsContainer = document.getElementById('routeSteps');
+            stepsContainer.innerHTML = ''; // 清空之前的步骤
+            routeData.steps.forEach((step, index) => {
+                const stepElement = document.createElement('div');
+                stepElement.className = 'step';
+                stepElement.innerHTML = `
+                    <div><strong>步骤 ${index + 1}:</strong> ${step.instruction}</div>
+                    <div class="step-distance">距离: ${step.distance}米 | 预计时间: ${Math.ceil(step.duration / 60)}分钟</div>
+                `;
+                stepsContainer.appendChild(stepElement);
+            });
+        }
+
+        // 显示错误信息
+        function showError(message) {
+            const errorContainer = document.getElementById('errorContainer');
+            errorContainer.innerHTML = `<div class="error-message">${message}</div>`;
+            errorContainer.style.display = 'block';
+        }
+
+        // 绘制备选路线
+        function drawBackupRoute(map, routeData) {
+            console.log('开始绘制备选路线');
+            // 构建包含起点、途经点和终点的完整路径
+            const path = [
+                routeData.origin,
+                ...routeData.waypoints,
+                routeData.destination
+            ];
+
+            const polyline = new AMap.Polyline({
+                path: path,
+                strokeColor: '#3366FF',
+                strokeWeight: 6,
+                strokeOpacity: 0.6,
+                isOutline: true,
+                outlineColor: '#ffffff',
+                outlineWeight: 2,
+                // 添加箭头，提高路线可读性
+                showDir: true
+            });
+
+            polyline.setMap(map);
+            map.setFitView([polyline]);
+            console.log('备选路线绘制完成');
+        }
+
+        // 页面加载完成后初始化地图
+        window.onload = initMap;
+    </script>
+</body>
+</html>

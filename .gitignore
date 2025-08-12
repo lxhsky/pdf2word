@@ -1,0 +1,45 @@
+# 虚拟环境
+venv/
+
+# Python缓存
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# 临时文件
+*.tmp
+*.temp
+
+# 日志文件
+*.log
+
+# 操作系统文件
+.DS_Store
+Thumbs.db
+
+# 编辑器配置
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# 测试和构建文件
+build/
+dist/
+*.egg-info/
+*.egg
+
+# 环境变量文件
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# 上传的大型文件
+*.pdf
+*.docx
